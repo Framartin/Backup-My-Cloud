@@ -1,4 +1,6 @@
 % setdefault('page', 'Dashboard')
+% setdefault('class_active', ' class="active"')
+% setdefault('span_active', ' <span class="sr-only">(current)</span>')
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -39,19 +41,19 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">
+          <a class="navbar-brand" href="/">
             <img alt="BackupMyCloud" src="static/icon.png" style="width: 40px">
           </a>
-          <a class="navbar-brand nav nav-pills active" href="#">BackupMyCloud</a>
+          <a class="navbar-brand nav nav-pills active" href="/">BackupMyCloud</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav navbar-right">
-            <li><a href="#">Dashboard</a></li>
-            <li><a href="#">Settings</a></li>
-            <li><a href="#">Help</a></li>
-            <li><a href="#">About</a></li>
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/settings">Settings</a></li>
+            <li><a href="/help">Help</a></li>
+            <li><a href="/about">About</a></li>
           </ul>
-          <form class="navbar-form navbar-right">
+          <form class="navbar-form navbar-right" action='/search' method='post'>
             <input type="text" class="form-control" placeholder="Search...">
           </form>
         </div>
@@ -62,10 +64,10 @@
       <div class="row">
         <div class="col-sm-3 col-md-2 sidebar">
           <ul class="nav nav-sidebar">
-            <li class="active"><a href="#">Overview <span class="sr-only">(current)</span></a></li>
-            <li><a href="#">Reports</a></li>
-            <li><a href="#">Analytics</a></li>
-            <li><a href="#">Export</a></li>
+            <li{{ !class_active if page =='Home' else ''}}><a href="/">Home{{ !span_active if page =='Home' else ''}}</a></li>
+            <li{{ !class_active if page =='Settings' else ''}}><a href="/settings">Settings{{ !span_active if page =='Settings' else ''}}</a></li>
+            <li{{ !class_active if page =='List of services' else ''}}><a href="#">List of services{{ !span_active if page =='List of services' else ''}}</a></li>
+            <li{{ !class_active if page =='Export' else ''}}><a href="#">Export{{ !span_active if page =='Export' else ''}}</a></li>
           </ul>
           <ul class="nav nav-sidebar">
             <li><a href="">Nav item</a></li>

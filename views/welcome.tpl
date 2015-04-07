@@ -1,4 +1,4 @@
-% include('header.tpl', title='Settings')
+% include('header.tpl', page='Home')
 
 % if no_config:
 
