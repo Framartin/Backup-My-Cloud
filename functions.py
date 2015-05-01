@@ -41,13 +41,13 @@ def get_firefox_profiles(firefox_dir):
     if not os.path.exists(firefox_dir):
         return []
     if not os.path.isfile(firefox_dir+"profiles.ini"): # old FF version
-        return glob(firefox_dir+"*.[dD]efault")
+        return glob(firefox_dir+"*.[dD]efault/")
     firefox_profiles = []
     p = re.compile('Path=(.+)')
     with open (firefox_dir+"profiles.ini", "r") as f:
         for row in f.readlines():
             if re.search("Path=", row):
-                firefox_profiles = firefox_profiles + [firefox_dir+p.match(row).group(1)]
+                firefox_profiles = firefox_profiles + [firefox_dir+p.match(row).group(1)+'/']
     return firefox_profiles
 
 def get_profiles(os_type):
@@ -84,7 +84,9 @@ def retrieve_firefox_urls(profile, condition):
     conn = sqlite3.connect(profile + 'places.sqlite')
     urls = conn.execute('''SELECT DISTINCT RTRIM(url, '/')
                             FROM moz_places
-                            WHERE url {} ;''').format(condition)
+                            WHERE url {} ;'''.format(condition)).fetchall()
+    conn.close()
+    urls = [x[0] for x in urls] # list of 1-uple to list
     return urls
 
 # for Chrome bookmarks (JSON file)
@@ -126,8 +128,10 @@ def retrieve_chrome_bookmarks(profile, reg_exp):
 def retrieve_chrome_urls(profile, condition):
     conn = sqlite3.connect(profile + 'History')
     urls = conn.execute('''SELECT DISTINCT url
-                            FROM moz_places
-                            WHERE url {} ;''').format(condition)
+                            FROM urls
+                            WHERE url {} ;'''.format(condition)).fetchall()
+    conn.close()
+    urls = [x[0] for x in urls] # list of 1-uple to list
     return urls
 
 #
@@ -141,6 +145,7 @@ def get_conditions(software_type, url_instance):
 # does not match history pages of framapad
     else:
         condition_sql, condition_reg_exp = 'LIKE "%{}/%"'.format(url_instance), '.*{}/.+'.format(url_instance)
+    return condition_sql, condition_reg_exp
 
 
 def url_from_browsers(software_type, url_instance):
@@ -165,7 +170,8 @@ def url_from_browsers(software_type, url_instance):
         reg_exp_1 = '^(.+{}'.format(url_instance)+"\/.{16}).+\/admin"
         reg_exp_2 = r'\1'
         urls = [re.sub(reg_exp_1, reg_exp_2, x) for x in urls]
-    urls = unique
+    urls = list(set(urls)) # get unique values
+    return urls
 
 ##########################
 #     download files     #
