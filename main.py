@@ -5,9 +5,15 @@
 ##############################
 
 from bottle import route, run, template, static_file
+import os
+import json
 
 # functions.py script
 import functions as f
+
+# constant
+HOME_DIR = os.path.expanduser('~')
+
 
 
 ##############################
@@ -35,9 +41,12 @@ def server_bootsrap(filepath):
 def welcome_page():
     return template('welcome', no_config = f.no_config(), no_websites = f.no_websites())
 
+@route('/search')
+def search_page():
+    return template('search')
 
 @route('/settings')
-def settings_pages():
+def settings_page():
     return template('settings')
 
 @route('/help')
@@ -48,9 +57,10 @@ def help_page():
 def about_page():
     return template('about')
 
-@route('/quit')
-def quit_page():
-    exit()
+# doesn't work
+#@route('/quit')
+#def quit_page():
+#    exit()
 
 ##############################
 #         web server         #
