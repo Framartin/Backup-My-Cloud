@@ -225,6 +225,9 @@ def extract_framapad_description(url):
 ##########################
 #        database        #
 ##########################
+
+### CREATE
+
 import sqlite3
 
 def create_database():
@@ -256,6 +259,8 @@ def create_database():
     conn.commit()
     conn.close()
 
+### ADD CONTENT
+
 # add a new instance
 def add_service(name, url, software_type):
     conn = sqlite3.connect('database.sqlite')
@@ -272,6 +277,50 @@ def add_content(url, autodl = False, name = None, description = None, blacklist 
     c.execute("INSERT INTO content VALUES (NULL, ?,?,?,?,?)", line)
     conn.commit()
     conn.close()
+
+# insert a new backup content
+def add_backup(url, content):
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    line = (url, content)
+    c.execute('''INSERT INTO backup VALUES (
+                 (SELECT idC FROM content WHERE url = ?),
+                 datetime('now'), ?)''', line)
+    conn.commit()
+    conn.close()
+
+### Retrieve a specific backup
+def retrieve_one_backup(url, date):
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    line = (url, date)
+    c.execute('''SELECT content
+                 FROM backup
+                 WHERE idc = (SELECT idC FROM content WHERE url = ?)
+                    AND date = ? ''', line)
+    content = c.fetchone()
+    if content != None:
+        content = content[0]
+    conn.commit()
+    conn.close()
+    return content
+
+# retrieve all backups of one url
+def retrieve_backups_from_url(url):
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    url = (url,)
+    c.execute('''SELECT date
+                 FROM backup
+                 WHERE idc = (SELECT idC FROM content WHERE url = ?) ''', url)
+    content = c.fetchall()
+    if content != []:
+        content = [x[0] for x in content]
+    conn.commit()
+    conn.close()
+    return content
+
+# retrieve all url of one service
 
 
 def retrieve_content_software(software_type):
