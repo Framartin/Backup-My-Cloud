@@ -238,16 +238,19 @@ def create_database():
                            name TEXT,
                            url TEXT NOT NULL,
                            software_type TEXT,
-                           CONSTRAINT url_service UNIQUE (url)
+                           CONSTRAINT url_service UNIQUE (url),
+                           CONSTRAINT name_service UNIQUE (name)
                            )''')
     c.execute('''CREATE TABLE IF NOT EXISTS content(
                            idC INTEGER PRIMARY KEY,
+                           idS INTEGER NOT NULL,
                            url TEXT NOT NULL,
                            auto_DL BOOL NOT NULL,
                            name TEXT,
                            description TEXT,
                            blacklist BOOL,
-                           CONSTRAINT url_content UNIQUE (url)
+                           CONSTRAINT url_content UNIQUE (url),
+                           FOREIGN KEY(idS) REFERENCES service(idS)
                            )''')
     c.execute('''CREATE TABLE IF NOT EXISTS backup(
                            idC INTEGER,
@@ -270,11 +273,13 @@ def add_service(name, url, software_type):
     conn.commit()
     conn.close()
 
-def add_content(url, autodl = False, name = None, description = None, blacklist = False):
+def add_content(url, service_url, autodl = False, name = None, description = None, blacklist = False):
     conn = sqlite3.connect('database.sqlite')
     c = conn.cursor()
-    line = (url, autodl, name, description, blacklist)
-    c.execute("INSERT INTO content VALUES (NULL, ?,?,?,?,?)", line)
+    line = (service_url, url, autodl, name, description, blacklist)
+    c.execute('''INSERT INTO content VALUES (NULL, 
+                  (SELECT idS FROM service WHERE url = ?),
+                  ?,?,?,?,?)''', line)
     conn.commit()
     conn.close()
 
@@ -289,7 +294,9 @@ def add_backup(url, content):
     conn.commit()
     conn.close()
 
-### Retrieve a specific backup
+### RETRIVE CONTENT
+
+# Retrieve a specific backup
 def retrieve_one_backup(url, date):
     conn = sqlite3.connect('database.sqlite')
     c = conn.cursor()
@@ -320,17 +327,48 @@ def retrieve_backups_from_url(url):
     conn.close()
     return content
 
-# retrieve all url of one service
-
-
-def retrieve_content_software(software_type):
+# retrieve all url of one service not blacklisted
+# service identified as its URL
+def retrieve_urls_from_service(service_url):
     conn = sqlite3.connect('database.sqlite')
-    urls = conn.execute('''SELECT * 
-                            FROM moz_places
-                            WHERE url {} ;'''.format(condition)).fetchall()
+    c = conn.cursor()
+    service_url = (service_url,)
+    c.execute('''SELECT url, auto_dl, name, description
+                 FROM content
+                 WHERE ids = (SELECT idS FROM service WHERE url = ?) 
+                    AND blacklist == 0 ''', service_url)
+    content = c.fetchall()
+    conn.commit()
     conn.close()
-    urls = [x[0] for x in urls] # list of 1-uple to list
-    return urls
+    return content # returns a tuples
+
+
+# retrieve all blacklisted url (from all services)
+def retrieve_blacklisted_url():
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    service_url = (service_url,)
+    c.execute('''SELECT url, name, description
+                 FROM content
+                 WHERE blacklist == 1 ''')
+    content = c.fetchall()
+    conn.commit()
+    conn.close()
+    return content # returns a tuples
+
+# services names
+def retrieve_services_names():
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    c.execute('''SELECT name
+                 FROM service ''')
+    content = c.fetchall()
+    if content != []:
+        content = [x[0] for x in content]
+    conn.commit()
+    conn.close()
+    return content
+
 
 ##########################
 #          #
