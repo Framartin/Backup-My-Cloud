@@ -170,6 +170,8 @@ def url_from_browsers(software_type, url_instance):
         reg_exp_1 = '^(.+{}'.format(url_instance)+"\/.{16}).+\/admin"
         reg_exp_2 = r'\1'
         urls = [re.sub(reg_exp_1, reg_exp_2, x) for x in urls]
+    elif software_type == "etherpad":
+        urls = [re.sub(r'\/export\/.*$', '', x) for x in urls] # remove export to some url
     urls = list(set(urls)) # get unique values
     return urls
 
@@ -182,38 +184,104 @@ def url_from_browsers(software_type, url_instance):
 
 import urllib.request
 
-def download(url, pathfile):
+def download(url):
     try:
-        urllib.request.urlretrieve(url, pathfile)
-        return True
+        #urllib.request.urlretrieve(url, pathfile)
+        return urllib.request.urlopen(url).read().decode('utf-8')
     except:
-        return False
+        return None
 
 
 ##########################
-#      rewrite url       #
+#    download content    #
 ##########################
 
 # from a content name, create the url to download the right content
 
-def full_url(main_url, software, extension):
-    if software == "etherpad":
-        if extention in ['txt', 'html', 'doc', 'pdf']:
-#            # do something
-#        else:
-            print("format not supported")
-            return False
+def download_from_content(url, software_type, extension = "html"):
+    if software_type == "etherpad":
+        if extension in ['txt', 'html', 'doc', 'pdf']:
+            url = url + '/export/' + extension
+        else:
+            #"format not supported"
+            return None
+    elif software_type == "framadate": # only export in csv
+        url = re.sub('\/(.{16})$', r'/exportcsv.php?numsondage=\1', url)
+        # https://framadate.org/exportcsv.php?numsondage=315nqrkke4kkff7u
+    else:
+        return None
+    file = download(url)
 
-# https://framadate.org/exportcsv.php?numsondage=315nqrkke4kkff7u
+# extract framapad name and description
+def extract_framapad_description(url):
+    page_html = download(url)
+    title = re.search('<h3>(.+)</h3>', page_html).group(1)
+    description = re.search('<p class="form-control-static well">(.+)</p>', page_html)
+    if description != None:
+        description = description.group(1)
+    return title, description
+
 
 ##########################
-#      download files    #
+#        database        #
 ##########################
+import sqlite3
+
+def create_database():
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS service(
+                           idS INTEGER PRIMARY KEY,
+                           name TEXT,
+                           url TEXT NOT NULL,
+                           software_type TEXT,
+                           CONSTRAINT url_service UNIQUE (url)
+                           )''')
+    c.execute('''CREATE TABLE IF NOT EXISTS content(
+                           idC INTEGER PRIMARY KEY,
+                           url TEXT NOT NULL,
+                           auto_DL BOOL NOT NULL,
+                           name TEXT,
+                           description TEXT,
+                           blacklist BOOL,
+                           CONSTRAINT url_content UNIQUE (url)
+                           )''')
+    c.execute('''CREATE TABLE IF NOT EXISTS backup(
+                           idC INTEGER,
+                           date DATETIME NOT NULL,
+                           content TEXT,
+                           PRIMARY KEY (idC, date),
+                           FOREIGN KEY(idC) REFERENCES content(idC)
+                           )''')
+    conn.commit()
+    conn.close()
+
+# add a new instance
+def add_service(name, url, software_type):
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    line = (name, url, software_type)
+    c.execute("INSERT INTO service VALUES (NULL, ?,?,?)", line)
+    conn.commit()
+    conn.close()
+
+def add_content(url, autodl = False, name = None, description = None, blacklist = False):
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    line = (url, autodl, name, description, blacklist)
+    c.execute("INSERT INTO content VALUES (NULL, ?,?,?,?,?)", line)
+    conn.commit()
+    conn.close()
 
 
-#    if not full_url(main_url, software, extension)
-
-
+def retrieve_content_software(software_type):
+    conn = sqlite3.connect('database.sqlite')
+    urls = conn.execute('''SELECT * 
+                            FROM moz_places
+                            WHERE url {} ;'''.format(condition)).fetchall()
+    conn.close()
+    urls = [x[0] for x in urls] # list of 1-uple to list
+    return urls
 
 ##########################
 #          #
