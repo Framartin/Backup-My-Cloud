@@ -333,7 +333,7 @@ def retrieve_urls_from_service(service_name):
     conn = sqlite3.connect('database.sqlite')
     c = conn.cursor()
     service_name = (service_name,)
-    c.execute('''SELECT idc, url, auto_dl, name, description
+    c.execute('''SELECT idc, url, auto_dl, name, description, blacklist
                  FROM content
                  WHERE ids = (SELECT idS FROM service WHERE name = ?) 
                     AND blacklist == 0 ''', service_name)
@@ -426,16 +426,126 @@ def get_list_services_group_html():
         html_list = html_list + '<a href="/services/'+ x +'" class="list-group-item">'+x+' </a>\n'
     return html_list
 
-# for service.tpl
-def get_list_content_html(service_name):
-    content = retrieve_urls_from_service(service_name) # tuples : idc, url, auto_dl, name, description
+# for services.tpl
+# services/<name>
+def get_list_content_html(service_name, message = None):  # message [idc,'my message'] : put my message in the idC list
+    content = retrieve_urls_from_service(service_name) # list of tuples : idc, url, auto_dl, name, description, blacklist
     list_html = ''
     for x in content:
+        idc, url, auto_dl, name, description, blacklist = str(x[0]), x[1], str(x[2]), x[3], x[4], str(x[5])
+        if name == None:
+            name = 'Set a name'
+        if description == None:
+            description = 'Set a description'
+        checked_autosave, checked_manualsave, checked_blacklist = '', '', ''
+        if blacklist == '1':
+            checked_blacklist = ' checked'
+        elif auto_dl == '1':
+            checked_autosave = ' checked'
+        elif auto_dl == '0':
+            checked_manualsave = ' checked'
+        else:
+            checked_autosave, checked_manualsave, checked_blacklist = '', '', ''
         list_html = list_html + '''
+<a name="anchor_'''+idc+'''"></a>
+<!-- Update name -->
+
+<form method="post" class="form-inline" action="#anchor_'''+idc+'''">
+  <div class="form-group">
+    <input name="url" type="text" class="hidden form-control" value="'''+url+'''" >
+    <label for="name">Name</label>
+    <input name="name" type="text" class="form-control" id="name" placeholder=""'''+name+'''">
+  </div>
+  <button type="submit" class="btn btn-default">Enter</button>
+</form>
+
+<!-- Update description -->
+<form method="post" class="form-inline" action="#anchor_'''+idc+'''">
+  <div class="form-group">
+    <input name="url" type="text" class="hidden form-control" value=""'''+url+'''" >
+    <label for="description">Description</label>
+    <input name="description" type="text" class="form-control" id="name" placeholder=""'''+description+'''">
+  </div>
+  <button type="submit" class="btn btn-default">Enter</button>
+</form>
+
+<!-- Update save method -->
+<form class="form-horizontal" method="post" action="#anchor_'''+idc+'''">
+
+  <input name="url" type="text" class="hidden form-control" value=""'''+url+'''" >
+
+  <div class="btn-group" data-toggle="buttons">
+    <label class="btn btn-info active">
+      <input type="radio" name="save" id="autosave" autocomplete="off" onclick="javascript: submit()"'''+checked_autosave+'''> Save automatically
+    </label>
+    <label class="btn btn-info">
+      <input type="radio" name="save" id="manualsave" autocomplete="off" onclick="javascript: submit()"'''+checked_manualsave+'''> Save manually
+    </label>
+    <label class="btn btn-default">
+      <input type="radio" name="save" id="blacklist" autocomplete="off" onclick="javascript: submit()"'''+checked_blacklist+'''> Don't save (blacklist it)
+    </label>
+  </div>
+
+</form>
 
 
-        '''
-    return 
+<!-- List of available backups -->
+
+<div class="btn-group">
+  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+    Backups List <span class="caret"></span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    <li><a href="#">Dates of backups</a></li>
+    <li class="divider"></li>
+    <li><a href="#">Another action</a></li>
+    <li><a href="#">Something else here</a></li>
+    <li><a href="#">Separated link</a></li>
+  </ul>
+</div>
+
+
+<!-- Manual backup now -->
+  <a class="btn btn-primary" href="/add_backup/'''+idc+'''" role="button">Backup Now</a>  '''
+    return list_html
+
+# update the content caracteristics
+def update_content_name(url, name):
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    line = (name, url)
+    c.execute('''UPDATE content SET name = ?
+                 WHERE url = ? ''', line)
+    conn.commit()
+    conn.close()
+
+def update_content_description(url, description):
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    line = (description, url)
+    c.execute('''UPDATE content SET description = ?
+                 WHERE url = ? ''', line)
+    conn.commit()
+    conn.close()
+
+# save : manualsave , autosave, blacklist
+def update_content_save_method(url, save):
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    if save == "blacklist":
+        line = (True, False, url)
+    elif save == "manualsave":
+        line = (False, False, url)
+    elif save == "autosave":
+        line = (False, True, url)
+    else:
+        conn.close()
+        return None
+    c.execute('''UPDATE content SET blacklist = ?, auto_dl = ?
+                 WHERE url = ? ''', line)
+    conn.commit()
+    conn.close()
+
 
 # for add_backup/<idc:int>
 def backup_one_content_now(idc, extension_preferences): # extension_preferences is a dict {'etherpad':'txt', 'framapad':'csv'}

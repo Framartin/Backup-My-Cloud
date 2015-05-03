@@ -91,7 +91,17 @@ def list_services_page():
 
 @route('/services/<name:re:.+>')
 def services_page(name):
-    return template('services', service = name, bar_list_services = f.get_list_services_html(name), list_content = f.get_list_content_html(service_name), message = '')
+    return template('services', service = name, bar_list_services = f.get_list_services_html(name), list_content = f.get_list_content_html(name), message = '')
+
+@post('/services/<name:re:.+>')
+def update_content_post():
+    service_name = name
+    url = request.forms.get('url')
+    name = request.forms.get('name')
+    description = request.forms.get('description')
+    save_method = request.forms.get('save_method')
+    #TODO
+
 
 @route('/add_backup/<idc:int>')
 def services_page(idc):
