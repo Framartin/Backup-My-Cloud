@@ -5,18 +5,31 @@
 
 # if no config exists (first use)
 def no_config(): # return True is no config exists
-    return not os.path.isfile('config/config.json')
+    return not os.path.isfile('config.json')
 
-# if no websites are saved
-def no_websites():
-    return not os.path.isfile('config/websites.json')
 
 
 ##########################
 #   create/load config   #
 ##########################
+import json
 
+# load the config
+# if failed, create it
+def load_config():
+    if no_config():
+        config = {'format':{'etherpad':'html', 'framadate':'csv'}}
+        with open ("config.json", "w") as f: 
+            json.dump(config, f)
+    else:
+        with open ("config.json", "r") as f: 
+            config = json.load(f)
+    return config
 
+# saved config
+def save_config(config):
+    with open ("config.json", "w") as f: 
+        json.dump(config, f)
 
 
 ##########################
@@ -511,7 +524,7 @@ def get_list_content_html(service_name, message = None):  # message [idc,'my mes
             backups_list = backups_list + '    <li><a href="/download/'+idc+'/'+str(date)+'">'+str(date)+'</a></li>\n'
         list_html = list_html + '''
 <a name="anchor_'''+idc+'''"></a>
-<h4 class="sub-header">'''+url+'''</h2>
+<h4 class="sub-header">'''+url+'''</h4>
 '''+message_html+'''
 <!-- Update name -->
 

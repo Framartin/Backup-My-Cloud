@@ -15,10 +15,9 @@ import functions as f
 # constant
 HOME_DIR = os.path.expanduser('~')
 
-
 # load configuration
-# TODO: temp
-extension_preferences = {'framapad': 'csv', 'etherpad': 'txt'}
+config = load_config()
+extension_preferences = config['format'] # example: {'framapad': 'csv', 'etherpad': 'txt'}
 
 # import urls into database
 f.url_to_database()
@@ -62,7 +61,7 @@ def server_bootsrap1(filepath):
 
 @route('/')
 def welcome_page():
-    return template('welcome', no_config = f.no_config(), no_websites = f.no_websites(), bar_list_services = f.get_list_services_html())
+    return template('welcome', no_config = f.no_config(), bar_list_services = f.get_list_services_html())
 
 @route('/search')
 def search_page():
@@ -71,6 +70,10 @@ def search_page():
 @route('/settings')
 def settings_page():
     return template('settings', bar_list_services = f.get_list_services_html())
+
+@route('/global_settings')
+def global_settings_page():
+    return template('global_settings', bar_list_services = f.get_list_services_html())
 
 @route('/add_service')
 def add_service():
