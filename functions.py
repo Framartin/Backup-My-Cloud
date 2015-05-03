@@ -518,10 +518,13 @@ def get_list_content_html(service_name, message = None, urls = None):  # message
         url_message, message = message[0], message[1]
     for x in content:
         idc, url, auto_dl, name, description, blacklist = str(x[0]), x[1], str(x[2]), x[3], x[4], str(x[5])
+        name_placeholder, description_placeholder = name, description
         if name == None:
-            name = 'Set a name'
+            name = ''
+            name_placeholder = 'Set a name'
         if description == None:
-            description = 'Set a description'
+            description = ''
+            description_placeholder = 'Set a description'
         checked_autosave, checked_manualsave, checked_blacklist = '', '', ''
         active_autosave, active_manualsave, active_blacklist = '', '', ''
         if blacklist == '1':
@@ -554,8 +557,8 @@ def get_list_content_html(service_name, message = None, urls = None):  # message
 <form method="post" class="form-inline" action="#anchor_'''+idc+'''">
   <div class="form-group">
     <input name="url" type="text" class="hidden form-control" value="'''+url+'''" >
-    <label for="name">Name</label>
-    <input name="content_name" type="text" class="form-control" id="content_name" placeholder="'''+name+'''">
+    <label for="name">Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+    <input name="content_name" type="text" class="form-control" id="content_name" placeholder="'''+name_placeholder+'''" value="'''+name+'''" size='21'>
   </div>
   <button type="submit" class="btn btn-default">Enter</button>
 </form>
@@ -565,7 +568,7 @@ def get_list_content_html(service_name, message = None, urls = None):  # message
   <div class="form-group">
     <input name="url" type="text" class="hidden form-control" value="'''+url+'''" >
     <label for="description">Description</label>
-    <input name="description" type="text" class="form-control" id="name" placeholder="'''+description+'''">
+    <textarea name="description" type="text" class="form-control" id="name" placeholder="'''+description_placeholder+'''" value="'''+description+'''" rows="2"></textarea>
   </div>
   <button type="submit" class="btn btn-default">Enter</button>
 </form>
