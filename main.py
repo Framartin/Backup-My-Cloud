@@ -16,6 +16,9 @@ import functions as f
 HOME_DIR = os.path.expanduser('~')
 
 
+# load configuration
+# TODO: temp
+extension_preferences = {'framapad': 'csv', 'etherpad': 'txt'}
 
 ##############################
 #        static files        #
@@ -27,11 +30,18 @@ HOME_DIR = os.path.expanduser('~')
 def server_static(filepath):
     return static_file(filepath, root='./static')
 
+@route('/add_backup/static/<filepath:path>')
+def server_static1(filepath):
+    return static_file(filepath, root='./static')
+
 # boostrap's files (standard and custom ones)
 @route('/bootstrap/<filepath:path>')
 def server_bootsrap(filepath):
     return static_file(filepath, root='./bootstrap')
 
+@route('/add_backup/bootstrap/<filepath:path>')
+def server_bootsrap1(filepath):
+    return static_file(filepath, root='./bootstrap')
 
 ##############################
 #        define routes       #
@@ -81,7 +91,12 @@ def list_services_page():
 
 @route('/services/<name:re:.+>')
 def services_page(name):
-    return template('services', service = name, bar_list_services = f.get_list_services_html(name))
+    return template('services', service = name, bar_list_services = f.get_list_services_html(name), list_content = f.get_list_content_html(service_name), message = '')
+
+@route('/add_backup/<idc:int>')
+def services_page(idc):
+    message = f.show_html_backup_one_content_now(idc, extension_preferences) # backup and returns an html message
+    return template('add_backup', bar_list_services = f.get_list_services_html(), message = message)
 
 # doesn't work
 #@route('/quit')

@@ -198,7 +198,7 @@ def download(url):
 
 # from a content name, create the url to download the right content
 
-def download_from_content(url, software_type, extension = "html"):
+def download_from_content(url, software_type, extension):
     if software_type == "etherpad":
         if extension in ['txt', 'html', 'doc', 'pdf']:
             url = url + '/export/' + extension
@@ -210,10 +210,10 @@ def download_from_content(url, software_type, extension = "html"):
         # https://framadate.org/exportcsv.php?numsondage=315nqrkke4kkff7u
     else:
         return None
-    file = download(url)
+    return download(url)
 
-# extract framapad name and description
-def extract_framapad_description(url):
+# extract framadate name and description
+def extract_framadate_description(url):
     page_html = download(url)
     title = re.search('<h3>(.+)</h3>', page_html).group(1)
     description = re.search('<p class="form-control-static well">(.+)</p>', page_html)
@@ -235,9 +235,9 @@ def create_database():
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS service(
                            idS INTEGER PRIMARY KEY,
-                           name TEXT,
+                           name TEXT NOT NULL,
                            url TEXT NOT NULL,
-                           software_type TEXT,
+                           software_type TEXT NOT NULL,
                            CONSTRAINT url_service UNIQUE (url),
                            CONSTRAINT name_service UNIQUE (name)
                            )''')
@@ -329,14 +329,14 @@ def retrieve_backups_from_url(url):
 
 # retrieve all url of one service not blacklisted
 # service identified as its URL
-def retrieve_urls_from_service(service_url):
+def retrieve_urls_from_service(service_name):
     conn = sqlite3.connect('database.sqlite')
     c = conn.cursor()
-    service_url = (service_url,)
-    c.execute('''SELECT url, auto_dl, name, description
+    service_name = (service_name,)
+    c.execute('''SELECT idc, url, auto_dl, name, description
                  FROM content
-                 WHERE ids = (SELECT idS FROM service WHERE url = ?) 
-                    AND blacklist == 0 ''', service_url)
+                 WHERE ids = (SELECT idS FROM service WHERE name = ?) 
+                    AND blacklist == 0 ''', service_name)
     content = c.fetchall()
     conn.commit()
     conn.close()
@@ -347,8 +347,7 @@ def retrieve_urls_from_service(service_url):
 def retrieve_blacklisted_url():
     conn = sqlite3.connect('database.sqlite')
     c = conn.cursor()
-    service_url = (service_url,)
-    c.execute('''SELECT url, name, description
+    c.execute('''SELECT idc, url, name, description
                  FROM content
                  WHERE blacklist == 1 ''')
     content = c.fetchall()
@@ -369,6 +368,35 @@ def retrieve_services_names():
     conn.close()
     return content
 
+# content url from content idc
+def retrieve_content_url_from_idc(idc):
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    idc = (idc,)
+    c.execute('''SELECT url
+                 FROM content
+                 WHERE idc == ? ''', idc)
+    content = c.fetchone()
+    if content != None:
+        content = content[0]
+    conn.commit()
+    conn.close()
+    return content
+
+# software type from content idc
+def retrieve_software_type_from_idc(idc):
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    idc = (idc,)
+    c.execute('''SELECT software_type
+                 FROM service
+                 WHERE ids == (SELECT ids FROM content WHERE idc = ?) ''', idc)
+    content = c.fetchone()
+    if content != None:
+        content = content[0]
+    conn.commit()
+    conn.close()
+    return content
 
 ##########################
 #  templates functions   #
@@ -398,6 +426,35 @@ def get_list_services_group_html():
         html_list = html_list + '<a href="/services/'+ x +'" class="list-group-item">'+x+' </a>\n'
     return html_list
 
+# for service.tpl
+def get_list_content_html(service_name):
+    content = retrieve_urls_from_service(service_name) # tuples : idc, url, auto_dl, name, description
+    list_html = ''
+    for x in content:
+        list_html = list_html + '''
+
+
+        '''
+    return 
+
+# for add_backup/<idc:int>
+def backup_one_content_now(idc, extension_preferences): # extension_preferences is a dict {'etherpad':'txt', 'framapad':'csv'}
+    # retrieve content url
+    url = retrieve_content_url_from_idc(idc)
+    # get the export url
+    software_type = retrieve_software_type_from_idc(idc)
+    extension = extension_preferences[software_type]
+    content = download_from_content(url, software_type, extension)
+    if content == None:
+        return None
+    add_backup(url, content)
+    return True
+
+def show_html_backup_one_content_now(idc, extension_preferences):
+    status = backup_one_content_now(idc, extension_preferences)
+    if status == True:
+        return '<div class="alert alert-success" role="alert">Successfully backup!</div>'
+    return '<div class="alert alert-danger" role="alert">ERROR! Backup process failed.</div>'
 
 ##########################
 #     search a query     #
