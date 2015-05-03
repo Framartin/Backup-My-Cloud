@@ -78,6 +78,7 @@ def get_profiles(os_type):
 ##########################
 #      find content      #
 ##########################
+import json
 
 # FF history and bookmarks are both stored on a same table of one sqlite's database 
 def retrieve_firefox_urls(profile, condition):
@@ -174,6 +175,26 @@ def url_from_browsers(software_type, url_instance):
         urls = [re.sub(r'\/export\/.*$', '', x) for x in urls] # remove export to some url
     urls = list(set(urls)) # get unique values
     return urls
+
+def a_not_in_b(a, b):
+    return a not in b
+
+# add the url to database (only urls not already present in database)
+# using table service in DB
+def url_to_database():
+    registred_urls = retrieve_all_urls()
+    services = retrieve_services_url_and_software_type() # returns list of tuples ('framapad.org', 'etherpad')
+    for x in services:
+        urls = url_from_browsers(software_type = x[1], url_instance = x[0])
+        urls_not_in_database = [x for x in urls if x not in registred_urls] # filter urls
+        for url in urls_not_in_database:
+            if x[1] == 'framadate':
+                title, description = extract_framadate_description(url)
+            else:
+                title, description = None, None
+            add_content(url, service_url = x[0], autodl = False, name = title, description = description, blacklist = False)
+
+
 
 ##########################
 #     download files     #
@@ -326,6 +347,19 @@ def retrieve_backups_from_url(url):
     conn.close()
     return content
 
+# retrieve all url
+def retrieve_all_urls():
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    c.execute('''SELECT url
+                 FROM content''')
+    content = c.fetchall()
+    if content != []:
+        content = [x[0] for x in content]
+    conn.commit()
+    conn.close()
+    return content
+
 # retrieve all url of one service not blacklisted
 # service identified as its URL
 def retrieve_urls_from_service(service_name):
@@ -363,6 +397,17 @@ def retrieve_services_names():
     content = c.fetchall()
     if content != []:
         content = [x[0] for x in content]
+    conn.commit()
+    conn.close()
+    return content
+
+# services names and software type
+def retrieve_services_url_and_software_type():
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    c.execute('''SELECT url, software_type
+                 FROM service ''')
+    content = c.fetchall()
     conn.commit()
     conn.close()
     return content
@@ -430,6 +475,11 @@ def get_list_services_group_html():
 def get_list_content_html(service_name, message = None):  # message [idc,'my message'] : put my message in the idC list
     content = retrieve_urls_from_service(service_name) # list of tuples : idc, url, auto_dl, name, description, blacklist
     list_html = ''
+    # display message after a post request
+    if message == None:
+        url_message, message = '', ''
+    else:
+        url_message, message = message[0], message[1]
     for x in content:
         idc, url, auto_dl, name, description, blacklist = str(x[0]), x[1], str(x[2]), x[3], x[4], str(x[5])
         if name == None:
@@ -449,6 +499,11 @@ def get_list_content_html(service_name, message = None):  # message [idc,'my mes
             active_manualsave = ' active'
         else:
             checked_autosave, checked_manualsave, checked_blacklist = '', '', ''
+        # display message after a post request
+        if url == url_message:
+            message_html = message
+        else:
+            message_html = ''
         # retrieve saved backups for this content
         backups_dates = retrieve_backups_from_url(url)
         backups_list = ''
@@ -457,6 +512,7 @@ def get_list_content_html(service_name, message = None):  # message [idc,'my mes
         list_html = list_html + '''
 <a name="anchor_'''+idc+'''"></a>
 <h4 class="sub-header">'''+url+'''</h2>
+'''+message_html+'''
 <!-- Update name -->
 
 <form method="post" class="form-inline" action="#anchor_'''+idc+'''">
@@ -513,7 +569,8 @@ def get_list_content_html(service_name, message = None):  # message [idc,'my mes
 
 <!-- Manual backup now -->
   <a class="btn btn-primary" href="/add_backup/'''+idc+'''" role="button">Backup Now</a> 
-</p>'''
+</p>
+<hr>'''
     return list_html
 
 # update the content caracteristics

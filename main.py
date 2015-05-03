@@ -21,7 +21,7 @@ HOME_DIR = os.path.expanduser('~')
 extension_preferences = {'framapad': 'csv', 'etherpad': 'txt'}
 
 # import urls into database
-#TODO
+f.url_to_database()
 
 ##############################
 #        static files        #
@@ -84,7 +84,8 @@ def add_service_post():
     software_type = request.forms.get('software_type')
     try:
         f.add_service(service_name, service_url, software_type)
-        return template('add_service', bar_list_services = f.get_list_services_html(), message = '<div class="alert alert-success" role="alert">Your service was correctly added.</div>')
+        f.url_to_database() # import new urls
+        return template('add_service', bar_list_services = f.get_list_services_html(), message = '<div class="alert alert-success" role="alert">Your service was correctly added. Associated urls are also saved.</div>')
     except:
         return template('add_service', bar_list_services = f.get_list_services_html(), message = '<div class="alert alert-danger" role="alert">FAILED! Your service was not added.</div>')
 
@@ -103,7 +104,7 @@ def list_services_page():
 
 @route('/services/<name:re:.+>')
 def services_page(name):
-    return template('services', service = name, bar_list_services = f.get_list_services_html(name), list_content = f.get_list_content_html(name), message = '')
+    return template('services', service = name, bar_list_services = f.get_list_services_html(name), list_content = f.get_list_content_html(name))
 
 @post('/services/<name:re:.+>')
 def update_content_post(name):
@@ -114,14 +115,16 @@ def update_content_post(name):
     save_method = request.forms.get('save')
     if content_name != None: # update the name
         f.update_content_name(url, content_name)
+        message = [url,'<div class="alert alert-success" role="alert">Name correctly updated.</div>']
     elif description != None: # update the description
         f.update_content_description(url, description)
+        message = [url,'<div class="alert alert-success" role="alert">Description correctly updated.</div>',]
     elif save_method != None: # update the save_method
         f.update_content_save_method(url, save_method)
+        message = [url,'<div class="alert alert-success" role="alert">Saving method correctly updated.</div>']
     else:
-        return "Sorry, wrong arguments."
-    return content_name
-
+        message = [url,'<div class="alert alert-danger" role="alert">FAILED! The update process was not correctly done.</div>']
+    return template('services', service = name, bar_list_services = f.get_list_services_html(name), list_content = f.get_list_content_html(name, message))
 
 @route('/add_backup/<idc:int>')
 def services_page(idc):
