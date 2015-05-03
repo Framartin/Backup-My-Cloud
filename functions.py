@@ -7,6 +7,8 @@
 def no_config(): # return True is no config exists
     return not os.path.isfile('config.json')
 
+def no_database(): # return True is no db exists
+    return not os.path.isfile('database.sqlite')
 
 
 ##########################
@@ -202,11 +204,13 @@ def url_to_database():
         urls_not_in_database = [x for x in urls if x not in registred_urls] # filter urls
         for url in urls_not_in_database:
             if x[1] == 'framadate':
+                reg_exp = r''+x[0]+'$'
+                if (re.search(".php", url) != None) | (re.search(reg_exp, url)!=None): # escape url to create the poll
+                    continue
                 title, description = extract_framadate_description(url)
             else:
                 title, description = None, None
             add_content(url, service_url = x[0], autodl = False, name = title, description = description, blacklist = False)
-
 
 
 ##########################
@@ -249,7 +253,9 @@ def download_from_content(url, software_type, extension):
 # extract framadate name and description
 def extract_framadate_description(url):
     page_html = download(url)
-    title = re.search('<h3>(.+)</h3>', page_html).group(1)
+    title = re.search('<h3>(.+)</h3>', page_html)
+    if title != None:
+        title = title.group(1)
     description = re.search('<p class="form-control-static well">(.+)</p>', page_html)
     if description != None:
         description = description.group(1)

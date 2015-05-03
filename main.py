@@ -19,6 +19,10 @@ HOME_DIR = os.path.expanduser('~')
 config = f.load_config()
 extension_preferences = config['format'] # example: {'framapad': 'csv', 'etherpad': 'txt'}
 
+# create database if not exists
+if f.no_database():
+    f.create_database()
+
 # import urls into database
 f.url_to_database()
 
@@ -70,10 +74,10 @@ def search_page():
 @post('/search')
 def search_query():
     words = request.forms.get('words')
+    if words == '':
+        return template('search', bar_list_services = f.get_list_services_html(), words = '', list_html='', message = '<div class="alert alert-danger" role="alert">Error! Enter words to query.</div>')
     list_html = f.search_list_content_html(words)
     return template('search', bar_list_services = f.get_list_services_html(), words = words, list_html = list_html, message = '')
-
-
 
 @route('/settings')
 def settings_page():
@@ -81,7 +85,9 @@ def settings_page():
 
 @route('/global_settings')
 def global_settings_page():
-    return template('global_settings', bar_list_services = f.get_list_services_html(), message = '')
+    # config load
+    config = f.load_config()
+    return template('global_settings', bar_list_services = f.get_list_services_html(), message = '', config=config)
 
 @post('/global_settings')
 def write_global_settings():
@@ -89,7 +95,7 @@ def write_global_settings():
     framadate_format = request.forms.get('framadate')
     config = config = {'format':{'etherpad':etherpad_format, 'framadate':framadate_format}}
     f.save_config(config)
-    return template('global_settings', bar_list_services = f.get_list_services_html(), message = '<div class="alert alert-success" role="alert">Configuration successfully saved.</div>')
+    return template('global_settings', bar_list_services = f.get_list_services_html(), message = '<div class="alert alert-success" role="alert">Configuration successfully saved.</div>', config=config)
 
 @route('/add_service')
 def add_service():
@@ -147,11 +153,17 @@ def update_content_post(name):
 
 @route('/add_backup/<idc:int>')
 def services_page(idc):
+    # config load
+    config = f.load_config()
+    extension_preferences = config['format']
     message = f.show_html_backup_one_content_now(idc, extension_preferences) # backup and returns an html message
     return template('add_backup', bar_list_services = f.get_list_services_html(), message = message)
 
 @route('/download/<idc:int>/<date:re:.+>')
 def download_backup(idc, date):
+    # config load
+    config = f.load_config()
+    extension_preferences = config['format']
     content = f.retrieve_one_backup(idc, date)
     software_type = f.retrieve_software_type_from_idc(idc)
     filename = "backup_"+str(idc)+"."+extension_preferences[software_type]
