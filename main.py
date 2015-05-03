@@ -4,9 +4,10 @@
 #            init            #
 ##############################
 
-from bottle import route, run, template, static_file
+from bottle import route, run, template, static_file, post, request
 import os
 import json
+import re
 
 # functions.py script
 import functions as f
@@ -39,23 +40,48 @@ def server_bootsrap(filepath):
 
 @route('/')
 def welcome_page():
-    return template('welcome', no_config = f.no_config(), no_websites = f.no_websites())
+    return template('welcome', no_config = f.no_config(), no_websites = f.no_websites(), bar_list_services = f.get_list_services_html())
 
 @route('/search')
 def search_page():
-    return template('search')
+    return template('search', bar_list_services = f.get_list_services_html())
 
 @route('/settings')
 def settings_page():
-    return template('settings')
+    return template('settings', bar_list_services = f.get_list_services_html())
+
+@route('/add_service')
+def add_service():
+    return template('add_service', bar_list_services = f.get_list_services_html(), message = '')
+
+@post('/add_service') # or @route('/login', method='POST')
+def add_service_post():
+    service_name = request.forms.get('service_name')
+    service_url = request.forms.get('service_url')
+    service_url = re.sub(r'^https?:\/\/', '',service_url) # remove http or https
+    software_type = request.forms.get('software_type')
+    try:
+        f.add_service(service_name, service_url, software_type)
+        return template('add_service', bar_list_services = f.get_list_services_html(), message = '<div class="alert alert-success" role="alert">Your service was correctly added.</div>')
+    except:
+        return template('add_service', bar_list_services = f.get_list_services_html(), message = '<div class="alert alert-danger" role="alert">FAILED! Your service was not added.</div>')
+
 
 @route('/help')
 def help_page():
-    return template('help')
+    return template('help', bar_list_services = f.get_list_services_html())
 
 @route('/about')
 def about_page():
-    return template('about')
+    return template('about', bar_list_services = f.get_list_services_html())
+
+@route('/services')
+def list_services_page():
+    return template('list_services', bar_list_services = f.get_list_services_html(), list_services = f.get_list_services_group_html())
+
+@route('/services/<name:re:.+>')
+def services_page(name):
+    return template('services', service = name, bar_list_services = f.get_list_services_html(name))
 
 # doesn't work
 #@route('/quit')

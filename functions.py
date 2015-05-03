@@ -371,14 +371,32 @@ def retrieve_services_names():
 
 
 ##########################
-#          #
+#  templates functions   #
 ##########################
 
-#load_file
+# for header.tpl
+# list of services names for the left bar
+# <li><a href="/service/framapad">Framapad</a></li>
+# the actual page is highlighted 
+# <li class="active"><a href="/">Home <span class="sr-only">(current)</span></a></li>
+def get_list_services_html(current_page = None):
+    services = retrieve_services_names()
+    html_list = ''
+    for x in services:
+        if x == current_page: # highlight the list member
+            html_list = html_list + '<li class="active"><a href="/services/'+ x +'">'+x+' <span class="sr-only">(current)</span></a></li>\n'
+        else:
+            html_list = html_list + '<li><a href="/services/'+ x +'">'+x+'</a></li>\n'
+    return html_list
 
-
-#list_files
-
+# for list_services.tpl
+# <a href="#" class="list-group-item">Dapibus ac facilisis in</a>
+def get_list_services_group_html():
+    services = retrieve_services_names()
+    html_list = ''
+    for x in services:
+        html_list = html_list + '<a href="/services/'+ x +'" class="list-group-item">'+x+' </a>\n'
+    return html_list
 
 
 ##########################

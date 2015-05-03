@@ -1,4 +1,4 @@
-% include('header.tpl', page='Home')
+% include('header.tpl', page='Home', bar_list_services = bar_list_services)
 
 % if no_config:
 
