@@ -388,6 +388,19 @@ def retrieve_urls_from_service(service_name):
     conn.close()
     return content # returns a tuples
 
+# idem but with a list of urls
+def retrieve_urls_caracteristics(urls): # urls is a list
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    content = []
+    for url in urls:
+        url = (url,)
+        c.execute('''SELECT idc, url, auto_dl, name, description, blacklist
+                     FROM content
+                     WHERE url == ? ''', url)
+        content = content + [c.fetchone()]
+    conn.close()
+    return content # returns a tuples
 
 # retrieve all blacklisted url (from all services)
 def retrieve_blacklisted_url():
@@ -485,8 +498,12 @@ def get_list_services_group_html():
 
 # for services.tpl
 # services/<name>
-def get_list_content_html(service_name, message = None):  # message [idc,'my message'] : put my message in the idC list
-    content = retrieve_urls_from_service(service_name) # list of tuples : idc, url, auto_dl, name, description, blacklist
+# if urls is directly provided do not used service_name
+def get_list_content_html(service_name, message = None, urls = None):  # message [idc,'my message'] : put my message in the idC list
+    if urls!= None:
+        content = retrieve_urls_caracteristics(urls) # list of tuples : idc, url, auto_dl, name, description, blacklist
+    else:
+        content = retrieve_urls_from_service(service_name) # list of tuples : idc, url, auto_dl, name, description, blacklist
     list_html = ''
     # display message after a post request
     if message == None:
@@ -647,6 +664,28 @@ def show_html_backup_one_content_now(idc, extension_preferences):
 #     search a query     #
 ##########################
 
+# words to urls
+def search_in_database(words):
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    words = re.sub(' ', '%', words)
+    words = "%"+str(words)+"%"
+    words = (words,words,words)
+    c.execute('''SELECT DISTINCT content.url
+                 FROM content
+                 INNER JOIN backup ON backup.idc = content.idc
+                 WHERE content.name LIKE ?
+                    OR content.description LIKE ? 
+                    OR backup.content LIKE ? ''', words)
+    content = c.fetchall()
+    if content != []:
+        content = [x[0] for x in content]
+    conn.close()
+    return content
 
+# generate the html list
+def search_list_content_html(words):
+    urls = search_in_database(words)
+    return get_list_content_html(None, message = None, urls = urls)
 
 

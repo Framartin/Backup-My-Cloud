@@ -2,6 +2,7 @@
 % setdefault('class_active', ' class="active"')
 % setdefault('span_active', ' <span class="sr-only">(current)</span>')
 % setdefault('bar_list_services', '')
+% setdefault('redirect', '')
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -55,7 +56,7 @@
             <li><a href="/about">About</a></li>
           </ul>
           <form class="navbar-form navbar-right" action='/search' method='post'>
-            <input type="text" class="form-control" placeholder="Search...">
+            <input type="text" name='words' class="form-control" placeholder="Search...">
           </form>
         </div>
       </div>

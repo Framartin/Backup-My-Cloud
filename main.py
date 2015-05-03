@@ -16,7 +16,7 @@ import functions as f
 HOME_DIR = os.path.expanduser('~')
 
 # load configuration
-config = load_config()
+config = f.load_config()
 extension_preferences = config['format'] # example: {'framapad': 'csv', 'etherpad': 'txt'}
 
 # import urls into database
@@ -65,7 +65,15 @@ def welcome_page():
 
 @route('/search')
 def search_page():
-    return template('search', bar_list_services = f.get_list_services_html())
+    return template('search', bar_list_services = f.get_list_services_html(), words = '', list_html='', message = '<div class="alert alert-danger" role="alert">Error! Enter words to query.</div>')
+
+@post('/search')
+def search_query():
+    words = request.forms.get('words')
+    list_html = f.search_list_content_html(words)
+    return template('search', bar_list_services = f.get_list_services_html(), words = words, list_html = list_html, message = '')
+
+
 
 @route('/settings')
 def settings_page():
@@ -73,7 +81,15 @@ def settings_page():
 
 @route('/global_settings')
 def global_settings_page():
-    return template('global_settings', bar_list_services = f.get_list_services_html())
+    return template('global_settings', bar_list_services = f.get_list_services_html(), message = '')
+
+@post('/global_settings')
+def write_global_settings():
+    etherpad_format = request.forms.get('etherpad')
+    framadate_format = request.forms.get('framadate')
+    config = config = {'format':{'etherpad':etherpad_format, 'framadate':framadate_format}}
+    f.save_config(config)
+    return template('global_settings', bar_list_services = f.get_list_services_html(), message = '<div class="alert alert-success" role="alert">Configuration successfully saved.</div>')
 
 @route('/add_service')
 def add_service():
