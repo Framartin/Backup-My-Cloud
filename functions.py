@@ -297,14 +297,13 @@ def add_backup(url, content):
 ### RETRIVE CONTENT
 
 # Retrieve a specific backup
-def retrieve_one_backup(url, date):
+def retrieve_one_backup(idc, date):
     conn = sqlite3.connect('database.sqlite')
     c = conn.cursor()
-    line = (url, date)
+    line = (idc, date)
     c.execute('''SELECT content
                  FROM backup
-                 WHERE idc = (SELECT idC FROM content WHERE url = ?)
-                    AND date = ? ''', line)
+                 WHERE idc = ? AND date = ? ''', line)
     content = c.fetchone()
     if content != None:
         content = content[0]
@@ -438,23 +437,33 @@ def get_list_content_html(service_name, message = None):  # message [idc,'my mes
         if description == None:
             description = 'Set a description'
         checked_autosave, checked_manualsave, checked_blacklist = '', '', ''
+        active_autosave, active_manualsave, active_blacklist = '', '', ''
         if blacklist == '1':
             checked_blacklist = ' checked'
+            active_blacklist = ' active'
         elif auto_dl == '1':
             checked_autosave = ' checked'
+            active_autosave = ' active'
         elif auto_dl == '0':
             checked_manualsave = ' checked'
+            active_manualsave = ' active'
         else:
             checked_autosave, checked_manualsave, checked_blacklist = '', '', ''
+        # retrieve saved backups for this content
+        backups_dates = retrieve_backups_from_url(url)
+        backups_list = ''
+        for date in backups_dates:
+            backups_list = backups_list + '    <li><a href="/download/'+idc+'/'+str(date)+'">'+str(date)+'</a></li>\n'
         list_html = list_html + '''
 <a name="anchor_'''+idc+'''"></a>
+<h4 class="sub-header">'''+url+'''</h2>
 <!-- Update name -->
 
 <form method="post" class="form-inline" action="#anchor_'''+idc+'''">
   <div class="form-group">
     <input name="url" type="text" class="hidden form-control" value="'''+url+'''" >
     <label for="name">Name</label>
-    <input name="name" type="text" class="form-control" id="name" placeholder=""'''+name+'''">
+    <input name="content_name" type="text" class="form-control" id="content_name" placeholder="'''+name+'''">
   </div>
   <button type="submit" class="btn btn-default">Enter</button>
 </form>
@@ -462,9 +471,9 @@ def get_list_content_html(service_name, message = None):  # message [idc,'my mes
 <!-- Update description -->
 <form method="post" class="form-inline" action="#anchor_'''+idc+'''">
   <div class="form-group">
-    <input name="url" type="text" class="hidden form-control" value=""'''+url+'''" >
+    <input name="url" type="text" class="hidden form-control" value="'''+url+'''" >
     <label for="description">Description</label>
-    <input name="description" type="text" class="form-control" id="name" placeholder=""'''+description+'''">
+    <input name="description" type="text" class="form-control" id="name" placeholder="'''+description+'''">
   </div>
   <button type="submit" class="btn btn-default">Enter</button>
 </form>
@@ -472,41 +481,39 @@ def get_list_content_html(service_name, message = None):  # message [idc,'my mes
 <!-- Update save method -->
 <form class="form-horizontal" method="post" action="#anchor_'''+idc+'''">
 
-  <input name="url" type="text" class="hidden form-control" value=""'''+url+'''" >
-
+<div class="radio">
+  <input name="url" type="text" class="hidden form-control" value="'''+url+'''" >
   <div class="btn-group" data-toggle="buttons">
-    <label class="btn btn-info active">
-      <input type="radio" name="save" id="autosave" autocomplete="off" onclick="javascript: submit()"'''+checked_autosave+'''> Save automatically
+    <label onClick="this.form.submit();" class="btn btn-info'''+active_autosave+'''">
+      <input type="radio" name="save" id="autosave" value="autosave" onClick="this.form.submit();"'''+checked_autosave+'''> Save automatically
     </label>
-    <label class="btn btn-info">
-      <input type="radio" name="save" id="manualsave" autocomplete="off" onclick="javascript: submit()"'''+checked_manualsave+'''> Save manually
+    <label onClick="this.form.submit();" class="btn btn-info'''+active_manualsave+'''">
+      <input type="radio" name="save" id="manualsave" value="manualsave" onClick="this.form.submit();"'''+checked_manualsave+'''> Save manually
     </label>
-    <label class="btn btn-default">
-      <input type="radio" name="save" id="blacklist" autocomplete="off" onclick="javascript: submit()"'''+checked_blacklist+'''> Don't save (blacklist it)
+    <label onClick="this.form.submit();" class="btn btn-default'''+active_blacklist+'''">
+      <input type="radio" name="save" id="blacklist" value="blacklist" onClick="this.form.submit();"'''+checked_blacklist+'''> Don't save (blacklist it)
     </label>
   </div>
+</div>
 
 </form>
 
-
 <!-- List of available backups -->
-
+<p>
 <div class="btn-group">
   <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-    Backups List <span class="caret"></span>
+    Download a backup <span class="caret"></span>
   </button>
   <ul class="dropdown-menu" role="menu">
-    <li><a href="#">Dates of backups</a></li>
-    <li class="divider"></li>
-    <li><a href="#">Another action</a></li>
-    <li><a href="#">Something else here</a></li>
-    <li><a href="#">Separated link</a></li>
+      <li><a href="#">Dates of backups</a></li>
+      <li class="divider"></li>'''+backups_list+'''
   </ul>
 </div>
 
 
 <!-- Manual backup now -->
-  <a class="btn btn-primary" href="/add_backup/'''+idc+'''" role="button">Backup Now</a>  '''
+  <a class="btn btn-primary" href="/add_backup/'''+idc+'''" role="button">Backup Now</a> 
+</p>'''
     return list_html
 
 # update the content caracteristics
