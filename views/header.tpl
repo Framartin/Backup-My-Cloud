@@ -69,7 +69,7 @@
             <li{{ !class_active if page =='Home' else ''}}><a href="/">Home{{ !span_active if page =='Home' else ''}}</a></li>
             <li{{ !class_active if page =='Settings' else ''}}><a href="/settings">Settings{{ !span_active if page =='Settings' else ''}}</a></li>
             <li{{ !class_active if page =='List of services' else ''}}><a href="/services">List of services{{ !span_active if page =='List of services' else ''}}</a></li>
-            <li{{ !class_active if page =='Export' else ''}}><a href="#">Export{{ !span_active if page =='Export' else ''}}</a></li>
+            <li{{ !class_active if page =='Batch' else ''}}><a href="/auto_backup">Auto-backup{{ !span_active if page =='Batch' else ''}}</a></li>
           </ul>
           <ul class="nav nav-sidebar">
             {{ !bar_list_services }}

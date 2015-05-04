@@ -362,7 +362,6 @@ def retrieve_backups_from_url(url):
     content = c.fetchall()
     if content != []:
         content = [x[0] for x in content]
-    conn.commit()
     conn.close()
     return content
 
@@ -375,7 +374,19 @@ def retrieve_all_urls():
     content = c.fetchall()
     if content != []:
         content = [x[0] for x in content]
-    conn.commit()
+    conn.close()
+    return content
+
+# retrieve all idc auto_dl (not blacklisted)
+def retrieve_all_auto_dl_urls():
+    conn = sqlite3.connect('database.sqlite')
+    c = conn.cursor()
+    c.execute('''SELECT idc
+                 FROM content
+                 WHERE auto_dl == 1 AND blacklist == 0''')
+    content = c.fetchall()
+    if content != []:
+        content = [x[0] for x in content]
     conn.close()
     return content
 
@@ -390,7 +401,6 @@ def retrieve_urls_from_service(service_name):
                  WHERE ids = (SELECT idS FROM service WHERE name = ?) 
                     AND blacklist == 0 ''', service_name)
     content = c.fetchall()
-    conn.commit()
     conn.close()
     return content # returns a tuples
 
@@ -416,7 +426,6 @@ def retrieve_blacklisted_url():
                  FROM content
                  WHERE blacklist == 1 ''')
     content = c.fetchall()
-    conn.commit()
     conn.close()
     return content # returns a tuples
 
@@ -429,7 +438,6 @@ def retrieve_services_names():
     content = c.fetchall()
     if content != []:
         content = [x[0] for x in content]
-    conn.commit()
     conn.close()
     return content
 
@@ -440,7 +448,6 @@ def retrieve_services_url_and_software_type():
     c.execute('''SELECT url, software_type
                  FROM service ''')
     content = c.fetchall()
-    conn.commit()
     conn.close()
     return content
 
@@ -455,7 +462,6 @@ def retrieve_content_url_from_idc(idc):
     content = c.fetchone()
     if content != None:
         content = content[0]
-    conn.commit()
     conn.close()
     return content
 
@@ -470,7 +476,6 @@ def retrieve_software_type_from_idc(idc):
     content = c.fetchone()
     if content != None:
         content = content[0]
-    conn.commit()
     conn.close()
     return content
 
@@ -579,15 +584,15 @@ def get_list_content_html(service_name, message = None, urls = None):  # message
 <div class="radio">
   <input name="url" type="text" class="hidden form-control" value="'''+url+'''" >
   <div class="btn-group" data-toggle="buttons">
-    <label onClick="this.form.submit();" class="btn btn-info'''+active_autosave+'''">
+<!--    <label onClick="this.form.submit();" class="btn btn-info'''+active_autosave+'''"> -->
       <input type="radio" name="save" id="autosave" value="autosave" onClick="this.form.submit();"'''+checked_autosave+'''> Save automatically
-    </label>
-    <label onClick="this.form.submit();" class="btn btn-info'''+active_manualsave+'''">
+<!--    </label> -->
+<!--    <label onClick="this.form.submit();" class="btn btn-info'''+active_manualsave+'''"> -->
       <input type="radio" name="save" id="manualsave" value="manualsave" onClick="this.form.submit();"'''+checked_manualsave+'''> Save manually
-    </label>
-    <label onClick="this.form.submit();" class="btn btn-default'''+active_blacklist+'''">
+<!--    </label> -->
+<!--    <label onClick="this.form.submit();" class="btn btn-default'''+active_blacklist+'''"> -->
       <input type="radio" name="save" id="blacklist" value="blacklist" onClick="this.form.submit();"'''+checked_blacklist+'''> Don't save (blacklist it)
-    </label>
+<!--    </label> -->
   </div>
 </div>
 
@@ -668,6 +673,13 @@ def show_html_backup_one_content_now(idc, extension_preferences):
     if status == True:
         return '<div class="alert alert-success" role="alert">Successfully backup!</div>'
     return '<div class="alert alert-danger" role="alert">ERROR! Backup process failed.</div>'
+
+# for auto_backup
+def backup_auto_urls(extension_preferences):
+    idcs = retrieve_all_auto_dl_urls() # list of idc
+    for idc in idcs:
+        backup_one_content_now(idc, extension_preferences)
+    return None
 
 ##########################
 #     search a query     #

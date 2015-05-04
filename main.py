@@ -171,6 +171,17 @@ def download_backup(idc, date):
         f_temp.write(content)
     return static_file(filename, root='./temp', download=filename)
 
+@route('/auto_backup')
+def auto_backup_page():
+    return template('auto_backup', bar_list_services = f.get_list_services_html(), list_services = f.get_list_services_group_html())
+
+@route('/auto_backup_ok')
+def auto_backup_page():
+    # config load
+    config = f.load_config()
+    extension_preferences = config['format']
+    f.backup_auto_urls(extension_preferences)
+    return template('auto_backup', bar_list_services = f.get_list_services_html(), list_services = f.get_list_services_group_html(), message = '<div class="alert alert-success" role="alert">Content correctly saved!</div>')
 
 # doesn't work
 #@route('/quit')
