@@ -7,7 +7,7 @@
             <h1>Welcome!</h1>
             <p class="lead">Please configure BackupMyCloud before using it to save your data on your hard drive:
             <ul class="list-unstyled">
-              <li><span class="badge">1 <span class="glyphicon glyphicon-cog" aria-hidden="true"></span></span> Global settings: frequency of regular backups, etc.</li>
+              <li><span class="badge">1 <span class="glyphicon glyphicon-cog" aria-hidden="true"></span></span> Global settings: export formats</li>
               <li><span class="badge">2 <span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span></span> List supported websites where you have data</li>
               <li><span class="badge">3 <span class="glyphicon glyphicon-cloud" aria-hidden="true"></span></span> Choose your content to save</li>
               <li><span class="badge">4 <span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span></span> Enjoy!</li>
